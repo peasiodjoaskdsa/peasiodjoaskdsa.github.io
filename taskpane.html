@@ -1,11 +1,10 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
 <!DOCTYPE html>
 <html>
 
 <head>
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <!-- Add the OpenAI GPT-3 library -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/openai@0.10.0/dist/openai.min.js"></script>
 </head>
 
 <body>
@@ -17,70 +16,56 @@
 </body>
 
 <script>
-    // Set your OpenAI GPT-3 API key here
-    const apiKey = "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";
-    // Initialize the OpenAI API with your key
-    openai.apiKey = apiKey;
-
-    Office.onReady((info) => {
-        if (info.host === Office.HostType.Outlook) {
-            document.getElementById("helloButton").onclick = sayHello;
-        }
-    });
-
-    /**
-     * Writes 'Hello world!' to a new message body.
-     */
-    function sayHello() {
-        Office.context.mailbox.item.body.getAsync("html", function (result) {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-                var emailText = result.value;
-                correctTextWithChatGPT(emailText);
-            }
-        });
+  Office.onReady((info) => {
+    if (info.host === Office.HostType.Outlook) {
+      document.getElementById("helloButton").onclick = correctText;
     }
+  });
 
-    /**
-     * Corrects the text using ChatGPT and replaces it in the new message body.
-     */
-    function correctTextWithChatGPT(emailText) {
-        // Call ChatGPT to get the corrected version
-        var prompt = `Correct the following text: ${emailText}`;
-        openai.Completion.create(
-            {
-                engine: "text-davinci-002", // Choose the engine that best suits your needs
-                prompt: prompt,
-                max_tokens: 150, // You can adjust this parameter based on the desired response length
-                temperature: 0.7, // You can adjust this parameter to control the randomness of the response
-                stop: null, // You can add custom stop sequences if needed to control the completion
-            },
-            function (error, response) {
-                if (error) {
-                    console.error(error);
-                } else {
-                    var correctedText = response.choices[0].text.trim();
-                    replaceTextInNewMessage(correctedText);
-                }
-            }
-        );
-    }
+  /**
+   * Makes an API call to ChatGPT to correct the text and updates the email body with the corrected version.
+   */
+  function correctText() {
+    // Replace 'YOUR_CHATGPT_API_KEY' with your actual ChatGPT API key
+    const apiKey = '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';
+    const emailText = "Hello world!"; // Replace this with the text from the email you want to correct
 
-    /**
-     * Replaces the text in the new message body with the corrected version.
-     */
-    function replaceTextInNewMessage(correctedText) {
+    // Make an API call to ChatGPT to get the corrected text
+    fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: emailText }],
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Extract the corrected text from the API response
+        const correctedText = data.choices[0].message.content;
+
+        // Update the email body with the corrected text
         Office.context.mailbox.item.body.setAsync(
-            correctedText,
-            {
-                coercionType: "html", // Write text as HTML
-            },
-            function (asyncResult) {
-                if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                    write(asyncResult.error.message);
-                }
+          correctedText,
+          {
+            coercionType: 'html', // Write text as HTML
+          },
+          // Callback method to check that setAsync succeeded
+          function (asyncResult) {
+            if (asyncResult.status == Office.AsyncResultStatus.Failed) {
+              write(asyncResult.error.message);
             }
+          }
         );
-    }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
 </script>
+
 
 </html>
