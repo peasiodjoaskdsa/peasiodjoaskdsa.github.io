@@ -1,53 +1,56 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>OpenAI API Demo</title>
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
+
 <body>
-    <button id="runButton">Run OpenAI API</button>
+    <p>This add-in will insert the text from GPT-3 API in a new message.</p>
+    <button id="generateButton">Generate Text</button>
     <div id="responseContainer"></div>
-    
-    <script>
-        document.getElementById('runButton').addEventListener('click', function() {
-            fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer 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'
-                },
-                body: JSON.stringify({
-                    'model': 'gpt-3.5-turbo',
-                    'messages': [
-                        {
-                            'role': 'user',
-                            'content': 'Ret denne tekst her: hej med deg hvem er du min far er meget søder'
-                        }
-                    ],
-                    'temperature': 0.7
-                })
+
+    <!-- The following image URL tracks diagnostic data for this sample add-in. Please remove the image tag if you reuse this sample in your own code project. -->
+    <img src="https://pnptelemetry.azurewebsites.net/pnp-officeaddins/samples/outlook-add-in-hello-world-run" />
+</body>
+
+<script>
+    Office.onReady((info) => {
+        if (info.host === Office.HostType.Outlook) {
+            document.getElementById("generateButton").onclick = generateText;
+        }
+    });
+
+    /**
+     * Generates text using the OpenAI GPT-3 API and inserts it into a new message body.
+     */
+    function generateText() {
+        fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer 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'
+            },
+            body: JSON.stringify({
+                'model': 'gpt-3.5-turbo',
+                'messages': [
+                    {
+                        'role': 'user',
+                        'content': 'Ret denne tekst her: hej med deg hvem er du min far er meget s\xF8der'
+                    }
+                ],
+                'temperature': 0.7
             })
-            .then(response => response.json())
-            .then(data => {
-                const responseText = data.choices[0].message.content;
-                document.getElementById('responseContainer').innerText = responseText;
-
-                // Store the corrected text in a variable
-                const correctedText = responseText;
-
-                // Call the function to replace the Outlook mail text
-                replaceOutlookMailText(correctedText);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-
-        // Function to replace Outlook mail text
-        function replaceOutlookMailText(text) {
+        })
+        .then(response => response.json())
+        .then(data => {
+            const responseText = data.choices[0].message.content;
             Office.context.mailbox.item.body.setAsync(
-                text,
+                responseText,
                 {
-                    coercionType: "html", // Write text as HTML
+                    coercionType: "html" // Write text as HTML
                 },
                 function (asyncResult) {
                     if (asyncResult.status == Office.AsyncResultStatus.Failed) {
@@ -55,7 +58,11 @@
                     }
                 }
             );
-        }
-    </script>
-</body>
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+
 </html>
