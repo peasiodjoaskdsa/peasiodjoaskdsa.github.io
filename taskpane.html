@@ -20,7 +20,7 @@
                     'messages': [
                         {
                             'role': 'user',
-                            'content': 'Ret denne tekst her: hej med deg hvem er du min far er meget s\xF8der'
+                            'content': 'Ret denne tekst her: hej med deg hvem er du min far er meget søder'
                         }
                     ],
                     'temperature': 0.7
@@ -30,11 +30,32 @@
             .then(data => {
                 const responseText = data.choices[0].message.content;
                 document.getElementById('responseContainer').innerText = responseText;
+
+                // Store the corrected text in a variable
+                const correctedText = responseText;
+
+                // Call the function to replace the Outlook mail text
+                replaceOutlookMailText(correctedText);
             })
             .catch(error => {
                 console.error('Error:', error);
             });
         });
+
+        // Function to replace Outlook mail text
+        function replaceOutlookMailText(text) {
+            Office.context.mailbox.item.body.setAsync(
+                text,
+                {
+                    coercionType: "html", // Write text as HTML
+                },
+                function (asyncResult) {
+                    if (asyncResult.status == Office.AsyncResultStatus.Failed) {
+                        write(asyncResult.error.message);
+                    }
+                }
+            );
+        }
     </script>
 </body>
 </html>
